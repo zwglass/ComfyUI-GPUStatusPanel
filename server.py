@@ -5,10 +5,14 @@ from threading import Lock
 from aiohttp import web
 
 try:
-    import pynvml
+    from pynvml import (
+        nvmlInit, nvmlShutdown, nvmlDeviceGetCount, nvmlDeviceGetHandleByIndex,
+        nvmlDeviceGetName, nvmlDeviceGetMemoryInfo, nvmlDeviceGetUtilizationRates,
+        nvmlDeviceGetTemperature, nvmlDeviceGetPowerUsage, NVML_TEMPERATURE_GPU
+    )
     _NVML_OK = True
-except Exception:
-    print("[GPUStatusPanel] pynvml not installed, GPU stats disabled.")
+except Exception as e:
+    print(f"[GPUStatusPanel] nvidia-ml-py not installed, GPU stats disabled: {e}")
     _NVML_OK = False
 
 try:
@@ -55,27 +59,27 @@ def get_gpu_status():
     nvml_failed = False
     if _NVML_OK:
         try:
-            pynvml.nvmlInit()
-            count = pynvml.nvmlDeviceGetCount()
+            nvmlInit()
+            count = nvmlDeviceGetCount()
             data["backend"] = "nvml"
             for i in range(count):
-                h = pynvml.nvmlDeviceGetHandleByIndex(i)
-                name = _safe_decode_name(pynvml.nvmlDeviceGetName(h))
+                h = nvmlDeviceGetHandleByIndex(i)
+                name = _safe_decode_name(nvmlDeviceGetName(h))
 
-                mem = pynvml.nvmlDeviceGetMemoryInfo(h)
-                util = pynvml.nvmlDeviceGetUtilizationRates(h)
+                mem = nvmlDeviceGetMemoryInfo(h)
+                util = nvmlDeviceGetUtilizationRates(h)
 
                 # temperature might fail on some cards/drivers
                 temp = None
                 try:
-                    temp = int(pynvml.nvmlDeviceGetTemperature(h, pynvml.NVML_TEMPERATURE_GPU))
+                    temp = int(nvmlDeviceGetTemperature(h, NVML_TEMPERATURE_GPU))
                 except Exception:
                     pass
 
                 # power might fail too
                 power_w = None
                 try:
-                    power_mw = pynvml.nvmlDeviceGetPowerUsage(h)  # milliwatts
+                    power_mw = nvmlDeviceGetPowerUsage(h)  # milliwatts
                     power_w = round(power_mw / 1000.0, 1)
                 except Exception:
                     pass
@@ -91,7 +95,7 @@ def get_gpu_status():
                     "power_w": power_w,
                 })
             try:
-                pynvml.nvmlShutdown()
+                nvmlShutdown()
             except Exception:
                 pass
 
