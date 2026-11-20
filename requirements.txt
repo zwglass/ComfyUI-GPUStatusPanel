@@ -1,8 +1,8 @@
 # NVIDIA GPU monitoring (official NVIDIA bindings)
-nvidia-ml-py>=12.535.0
+nvidia-ml-py>=13.615.71
 
 # System monitoring (for macOS MPS and CPU fallback)
-psutil>=5.9.0
+psutil>=7.2.2
 
 # Web framework (ComfyUI uses aiohttp)
-aiohttp>=3.8.0
+aiohttp>=3.14.5
